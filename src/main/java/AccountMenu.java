@@ -2,7 +2,7 @@ import java.util.Scanner;
 
 public class AccountMenu {
 
-    protected static void logIn() {
+    protected static void logIn(DataBase base) {
         while (true) {
             System.out.println("Enter your card number:");
             Scanner sc = new Scanner(System.in);
@@ -15,10 +15,10 @@ public class AccountMenu {
             if (password.equals("0")) {
                 System.exit(0);
             }
-            if (DataBase.checkPassword(cardNumber, password)) {
+            if (base.checkPassword(cardNumber, password)) {
                 System.out.println("You have successfully logged in!");
                 System.out.println();
-                logMenu(cardNumber);
+                logMenu(cardNumber, base);
                 break;
             } else {
                 System.out.println("Wrong card number or PIN!");
@@ -27,7 +27,7 @@ public class AccountMenu {
         }
     }
 
-    protected static void logMenu(String cardNumber) {
+    protected static void logMenu(String cardNumber, DataBase base) {
 
         boolean isTrue = true;
 
@@ -43,21 +43,21 @@ public class AccountMenu {
             int pick = sc.nextInt();
 
             switch (pick) {
-                case 1 -> getBalance(cardNumber);
+                case 1 -> getBalance(cardNumber, base);
                 case 2 -> {
                     System.out.println("Enter income:");
                     int amount = sc.nextInt();
                     if (amount > 0) {
-                        DataBase.addIncome(cardNumber, amount);
+                        base.addIncome(cardNumber, amount);
                         System.out.println("Income was added!");
                     } else {
                         System.out.println("Enter the positive number!");
                     }
                     System.out.println();
                 }
-                case 3 -> transfer(cardNumber);
+                case 3 -> transfer(cardNumber, base);
                 case 4 -> {
-                    DataBase.closeAccount(cardNumber);
+                    base.closeAccount(cardNumber);
                     isTrue = false;
                     System.out.println("The account has been closed!");
                     System.out.println();
@@ -76,23 +76,23 @@ public class AccountMenu {
         }
     }
 
-    protected static void getBalance(String cardNumber) {
-        System.out.println("Balance: " + DataBase.balance(cardNumber));
+    protected static void getBalance(String cardNumber, DataBase base) {
+        System.out.println("Balance: " + base.balance(cardNumber));
         System.out.println();
     }
 
-    protected static void transfer(String cardNumber) {
+    protected static void transfer(String cardNumber, DataBase base) {
         System.out.println("Transfer");
         System.out.println("Enter card number:");
         Scanner sc = new Scanner(System.in);
         String recipientsCard = sc.nextLine();
-        if (DataBase.checkNumber(recipientsCard)) {
+        if (base.checkNumber(recipientsCard)) {
             System.out.println("Enter how much money you want to transfer:");
             int amount = sc.nextInt();
-            if (DataBase.balance(cardNumber) < amount) {
+            if (base.balance(cardNumber) < amount) {
                 System.out.println("Not enough money!");
             } else {
-                DataBase.doTransfer(cardNumber, recipientsCard, amount);
+                base.doTransfer(cardNumber, recipientsCard, amount);
                 System.out.println("Success!");
             }
             System.out.println();
@@ -124,12 +124,7 @@ public class AccountMenu {
                 }
                 l /= 10;
             }
-            if (temp % 10 == 0) {
-                return true;
-            } else {
-                return false;
-            }
-
+            return temp % 10 == 0;
         } catch (NumberFormatException e) {
             return false;
         }

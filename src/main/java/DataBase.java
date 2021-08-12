@@ -3,23 +3,31 @@ import java.sql.*;
 
 public class DataBase {
 
-    public static Connection connectToDB() {
+    SQLiteDataSource dataSource;
+    Connection con;
+    Statement statement;
+    private static final String INSERT_INFO = "INSERT INTO card (number, pin) VALUES(?, ?)";
+    private static final String SELECT_NUMBER = "SELECT number FROM card";
+    private static final String SELECT_NUMBER_PIN = "SELECT number, pin FROM card";
+    private static final String SELECT_BALANCE = "SELECT balance FROM card WHERE number = ?";
+    private static final String UPDATE_BALANCE = "UPDATE card SET balance = balance + ? WHERE number = ?";
+    private static final String INCREASE_BALANCE = "UPDATE card SET balance = balance + ? WHERE number = ?";
+    private static final String DECREASE_BALANCE = "UPDATE card SET balance = balance - ? WHERE number = ?";
+    private static final String DELETE_INFO = "DELETE FROM card WHERE number = ?";
 
-        String url = "jdbc:sqlite:AccountsInfo.db";
-
-        SQLiteDataSource dataSource = new SQLiteDataSource();
-        dataSource.setUrl(url);
-        Connection con = null;
+    DataBase() {
+        this.dataSource = new SQLiteDataSource();
+        dataSource.setUrl("jdbc:sqlite:AccountsInfo.db");
         try {
-            con = dataSource.getConnection();
+            this.con = dataSource.getConnection();
+            this.statement = con.createStatement();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return con;
     }
 
-    public static void createTable() {
-        try (Statement statement = connectToDB().createStatement()) {
+    public void createTable() {
+        try {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS card(" +
                     "id       INTEGER PRIMARY KEY," +
                     "number   TEXT NOT NULL," +
@@ -30,25 +38,21 @@ public class DataBase {
         }
     }
 
-    public static void putCardInfo(String cardNumber, String password) {
-        String sql = "INSERT INTO card (number, pin) VALUES(?, ?)";
-
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
+    public void putCardInfo(String cardNumber, String password) {
+        try {
+            PreparedStatement pstmt = con.prepareStatement(INSERT_INFO);
             pstmt.setString(1, cardNumber);
             pstmt.setString(2, password);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    public static boolean checkNumber(String cardNumber) {
-        String sql = "SELECT number FROM card";
-
-        try (Connection con = connectToDB();
-             Statement stmt  = con.createStatement();
-             ResultSet rs    = stmt.executeQuery(sql)) {
+    public boolean checkNumber(String cardNumber) {
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(SELECT_NUMBER);
 
             while (rs.next()) {
                 if (rs.getString("number").equals(cardNumber)) {
@@ -56,93 +60,75 @@ public class DataBase {
                 }
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
         return false;
     }
 
-    public static boolean checkPassword(String cardNumber, String password) {
-        String sql = "SELECT number, pin FROM card";
-
-        try (Connection con = connectToDB();
-             Statement stmt  = con.createStatement();
-             ResultSet rs    = stmt.executeQuery(sql)) {
+    public boolean checkPassword(String cardNumber, String password) {
+        try {
+            Statement stmt = con.createStatement();
+            ResultSet rs = stmt.executeQuery(SELECT_NUMBER_PIN);
 
             while (rs.next()) {
                 if (rs.getString("number").equals(cardNumber) &&
-                    rs.getString("pin").equals(password)) {
+                        rs.getString("pin").equals(password)) {
                     return true;
                 }
             }
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
         return false;
     }
 
-    public static int balance(String cardNumber) {
-        String sql = "SELECT balance FROM card WHERE number = ?";
-        int balance = 0;
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt  = con.prepareStatement(sql)) {
-
+    public int balance(String cardNumber) {
+        try {
+            PreparedStatement pstmt = con.prepareStatement(SELECT_BALANCE);
             pstmt.setString(1, cardNumber);
-            ResultSet rs  = pstmt.executeQuery();
+            ResultSet rs = pstmt.executeQuery();
 
-            balance = rs.getInt("balance");
-
+            return rs.getInt("balance");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
+            return 0;
         }
-        return balance;
     }
 
-    public static void addIncome(String cardNumber, int amount) {
-        String sql = "UPDATE card SET balance = balance + ? WHERE number = ?";
-
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
+    public void addIncome(String cardNumber, int amount) {
+        try {
+            PreparedStatement pstmt = con.prepareStatement(UPDATE_BALANCE);
             pstmt.setInt(1, amount);
             pstmt.setString(2, cardNumber);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    public static void doTransfer(String cardNumber, String recipientsCard, int amount) {
-        String sql = "UPDATE card SET balance = balance + ? WHERE number = ?";
-        String sql1 = "UPDATE card SET balance = balance - ? WHERE number = ?";
-
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
+    public void doTransfer(String cardNumber, String recipientsCard, int amount) {
+        try {
+            PreparedStatement pstmt = con.prepareStatement(INCREASE_BALANCE);
             pstmt.setInt(1, amount);
             pstmt.setString(2, recipientsCard);
             pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
 
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt = con.prepareStatement(sql1)) {
-            pstmt.setInt(1, amount);
-            pstmt.setString(2, cardNumber);
-            pstmt.executeUpdate();
+            PreparedStatement pstmt1 = con.prepareStatement(DECREASE_BALANCE);
+            pstmt1.setInt(1, amount);
+            pstmt1.setString(2, cardNumber);
+            pstmt1.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 
-    public static void closeAccount(String cardNumber) {
-        String sql = "DELETE FROM card WHERE number = ?";
-
-        try (Connection con = connectToDB();
-             PreparedStatement pstmt = con.prepareStatement(sql)) {
+    public void closeAccount(String cardNumber) {
+        try {
+            PreparedStatement pstmt = con.prepareStatement(DELETE_INFO);
             pstmt.setString(1, cardNumber);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
-
 }

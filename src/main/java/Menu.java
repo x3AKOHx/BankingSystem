@@ -1,7 +1,7 @@
 import java.util.Scanner;
 
 public class Menu {
-    public static void start() {
+    public static void start(DataBase base) {
         boolean isTrue = true;
 
         while (isTrue) {
@@ -13,8 +13,8 @@ public class Menu {
             int pick = sc.nextInt();
 
             switch (pick) {
-                case 1 -> Account.createAccount();
-                case 2 -> AccountMenu.logIn();
+                case 1 -> Account.createAccount(base);
+                case 2 -> AccountMenu.logIn(base);
                 case 0 -> {
                     isTrue = false;
                     System.out.println("Bye!");

@@ -1,7 +1,7 @@
 public class Main {
     public static void main(String[] args) {
-        DataBase.connectToDB();
-        DataBase.createTable();
-        Menu.start();
+        DataBase base = new DataBase();
+        base.createTable();
+        Menu.start(base);
     }
 }
