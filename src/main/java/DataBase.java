@@ -1,11 +1,10 @@
-import org.sqlite.SQLiteDataSource;
+import javax.sql.DataSource;
 import java.sql.*;
 
 public class DataBase {
 
-    SQLiteDataSource dataSource;
-    Connection con;
-    Statement statement;
+    private Connection con;
+    private Statement statement;
     private static final String INSERT_INFO = "INSERT INTO card (number, pin) VALUES(?, ?)";
     private static final String SELECT_NUMBER = "SELECT number FROM card";
     private static final String SELECT_NUMBER_PIN = "SELECT number, pin FROM card";
@@ -15,18 +14,17 @@ public class DataBase {
     private static final String DECREASE_BALANCE = "UPDATE card SET balance = balance - ? WHERE number = ?";
     private static final String DELETE_INFO = "DELETE FROM card WHERE number = ?";
 
-    DataBase() {
-        this.dataSource = new SQLiteDataSource();
-        dataSource.setUrl("jdbc:sqlite:AccountsInfo.db");
+    public DataBase(DataSource dataSource) {
         try {
             this.con = dataSource.getConnection();
             this.statement = con.createStatement();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        createTable();
     }
 
-    public void createTable() {
+    private void createTable() {
         try {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS card(" +
                     "id       INTEGER PRIMARY KEY," +
